@@ -33,36 +33,8 @@ processed.data.folder = "data/processed-data"
 ```
 
 
-
-# Import metadata & process
-
-Run this code once with the most up-to-date metadata file.
-
-```{r import metadata file}
-metadata <- read_excel(here("10wpf Respirometer Datasheet Data.xlsx"))
-
-metadata <- metadata %>% rename("filename" = "File Name", 
-                                "date" = "Date [DD-MM-YYYY]", 
-                                "coh" = "Cohort #",
-                                "lane" = "Jar #",
-                                "pop" = "Population", 
-                                "emb.trt" = "Embryo Treatment", 
-                                "str.trt" = "Secondary Stressor",
-                                "m1start" = "M1 Start Time [HH:MM:SS]", 
-                                "m1end" = "M1 End Time [HH:MM:SS]",
-                                "m2start" = "M2 Start Time [HH:MM:SS]",
-                                "m2end" = "M2 End Time [HH:MM:SS]",
-                                "m3start" = "M3 Start Time [HH:MM:SS]", 
-                                "m3end" = "M3 End Time [HH:MM:SS]",
-                                "weight" = "Weight (mg ww)",
-                                "length" = "Standard Length (mm)") %>%
-  select(c('filename', 'date', 'coh', 'lane', 'pop', 'emb.trt', 'str.trt', 'm1start', 'm1end', 'm2start', 'm2end', 'm3start', 'm3end', 'weight', 'length')) %>% 
-  mutate(file.lanerange = sub(".*(\\d+-\\d+).*", "\\1", filename), # gets the lane range from the filename column and saves in a new column
-         pop = case_when(pop == "King's Creek" ~ "KC", # replace the long-form population names with the abbreviations
-                         pop == "Pescara" ~ "PES",
-                         pop == "Republic" ~ "REP", 
-                         TRUE ~ pop)
-         ) %>% mutate_at(c('m1start', 'm1end', 'm2start', 'm2end', 'm3start', 'm3end'), as_hms) %>% mutate_at('date', as_date)
+```{r import metadata}
+metadata <- read.csv(here("respirometry-metadata.csv"))
 ```
 
 # Raw data batch processing
