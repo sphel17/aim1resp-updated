@@ -8,7 +8,9 @@ cd data
 mkdir -p raw-data subprocessed-data processed-data
 cd ../code
 mkdir -p data-processing data-analysis data-visualization
-cd ..
+cd data-processing
+mkdir raw-data-processing rate-calculation rate-conversion
+cd ../..
 
 #verify folders have been set up properly
 ls -R
