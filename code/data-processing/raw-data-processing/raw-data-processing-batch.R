@@ -1,17 +1,3 @@
----
-title: "Respirometry Data Processing"
-author: "SEP"
-date: "2024-12-05"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
-# install packages if needed
-#install.packages("here")
-#install.packages("tidyverse")
-
 # load libraries
 library(here)
 library(dplyr)
@@ -30,23 +16,25 @@ processed.data.folder = "data/processed-data"
 
 # define custom operator
 `%notin%` <- Negate(`%in%`)
-```
 
+# ---------- 
+# Import Metadata
+# ----------
 
-```{r import metadata}
-metadata <- read.csv(here("respirometry-metadata.csv"))
-```
+metadata <- metadata <- read.csv(here("respirometry-metadata.csv"))
 
-# Raw data batch processing
+# ----------
+# Define functions
+# ----------
 
-```{r define function to process raw data file}
+# define function to process raw file
 process.file <- function(rawdata.filename, metadata, subprocessed.data.folder) {
   
   data.all.chs <- read.table(file = here(rawdata.folder, rawdata.filename),
-                               sep = '\t', # tab-delimited tables
-                               fileEncoding = "UTF-16LE", # enables function to read unicode table
-                               header = TRUE, # makes the row above the data into the column names
-                               skip = 22 ) # ignores rows in the file header
+                             sep = '\t', # tab-delimited tables
+                             fileEncoding = "UTF-16LE", # enables function to read unicode table
+                             header = TRUE, # makes the row above the data into the column names
+                             skip = 22 ) # ignores rows in the file header
   
   data.all.chs <- data.all.chs %>% 
     rename(date = Date..DD.MM.YYYY., Time = Time..HH.MM.SS., Temperature = Temperature.CH.1,
@@ -59,38 +47,35 @@ process.file <- function(rawdata.filename, metadata, subprocessed.data.folder) {
            Oxygen.CH.4, Phase.CH.4, Amplitude.CH.4) %>%
     mutate(date = mdy(date), # fix column types of date and time columns
            Time = Time %>% parse_time() %>% as_hms())
-    
-    # now get the metadata for the file as object 'working.metadata'
-    working.metadata <- metadata %>% filter(filename == str_remove(rawdata.filename, ".csv"))
-    
-    for (row in 1:nrow(data.all.chs)) {
-      if (data.all.chs[row, 'Time'] < working.metadata$m1start[1]) {
-        data.all.chs[row, 'Timephase'] <- "Acclimation"
-      } else if (data.all.chs[row, 'Time'] > working.metadata$m1start[1] & data.all.chs[row, 'Time'] < working.metadata$m1end[1]) {
-        data.all.chs[row, 'Timephase'] <- "M1"
-      } else if (data.all.chs[row, 'Time'] > working.metadata$m1end[1] & data.all.chs[row, 'Time'] < working.metadata$m2start[1]) {
-        data.all.chs[row, 'Timephase'] <- "Reoxygenation"
-      } else if (data.all.chs[row, 'Time'] > working.metadata$m2start[1] & data.all.chs[row, 'Time'] < working.metadata$m2end[1]) {
-        data.all.chs[row, 'Timephase'] <- "M2"
-      } else if (data.all.chs[row, 'Time'] > working.metadata$m2end[1] & data.all.chs[row, 'Time'] < working.metadata$m3start[1]) {
-        data.all.chs[row, 'Timephase'] <- "Heating"
-      } else if (data.all.chs[row, 'Time'] > working.metadata$m3start[1] & data.all.chs[row, 'Time'] < working.metadata$m3end[1]) {
-        data.all.chs[row, 'Timephase'] <- "M3"
-      } else if (data.all.chs[row, 'Time'] > working.metadata$m3end[1]) {
-        data.all.chs[row, 'Timephase'] <- "End"
-      } 
-    }
+  
+  # now get the metadata for the file as object 'working.metadata'
+  working.metadata <- metadata %>% filter(filename == str_remove(rawdata.filename, ".csv"))
+  
+  for (row in 1:nrow(data.all.chs)) {
+    if (data.all.chs[row, 'Time'] < working.metadata$m1start[1]) {
+      data.all.chs[row, 'Timephase'] <- "Acclimation"
+    } else if (data.all.chs[row, 'Time'] > working.metadata$m1start[1] & data.all.chs[row, 'Time'] < working.metadata$m1end[1]) {
+      data.all.chs[row, 'Timephase'] <- "M1"
+    } else if (data.all.chs[row, 'Time'] > working.metadata$m1end[1] & data.all.chs[row, 'Time'] < working.metadata$m2start[1]) {
+      data.all.chs[row, 'Timephase'] <- "Reoxygenation"
+    } else if (data.all.chs[row, 'Time'] > working.metadata$m2start[1] & data.all.chs[row, 'Time'] < working.metadata$m2end[1]) {
+      data.all.chs[row, 'Timephase'] <- "M2"
+    } else if (data.all.chs[row, 'Time'] > working.metadata$m2end[1] & data.all.chs[row, 'Time'] < working.metadata$m3start[1]) {
+      data.all.chs[row, 'Timephase'] <- "Heating"
+    } else if (data.all.chs[row, 'Time'] > working.metadata$m3start[1] & data.all.chs[row, 'Time'] < working.metadata$m3end[1]) {
+      data.all.chs[row, 'Timephase'] <- "M3"
+    } else if (data.all.chs[row, 'Time'] > working.metadata$m3end[1]) {
+      data.all.chs[row, 'Timephase'] <- "End"
+    } 
+  }
   
   data.all.chs <- data.all.chs %>% relocate(Timephase, .after = Salinity)
   
   write_csv(data.all.chs, file = here(subprocessed.data.folder, rawdata.filename))
   
 }
-```
 
-
-```{r define function to split subprocessed file into individual channels}
-# Function to split the file into four CSVs
+# define function to split processed file into individual channels
 split_csv_by_channel <- function(input.file, output.dir, metadata.obj = metadata) {
   # Read the original CSV
   original.data <- read.csv(input.file)
@@ -137,13 +122,15 @@ split_csv_by_channel <- function(input.file, output.dir, metadata.obj = metadata
     
     # Save to CSV
     write_csv(channel.data,
-      file = file.path(here(output.dir), paste0(base.filename, "_channel_", ch, ".csv"))
-      )
+              file = file.path(here(output.dir), paste0(base.filename, "_channel_", ch, ".csv"))
+    )
   }
 }
-```
 
-```{r batch process unprocessed data files}
+# ---------
+# Batch process files
+# ---------
+
 # list files that need processing
 rawdatafiles.list <- list.files(here(rawdata.folder))
 already.processed.rawdata <- list.files(here(subprocessed.data.folder))
@@ -186,4 +173,3 @@ if (length(rawdatafiles.to.process) == 0) {
   
   rm(updated.processed.rawdata, newlyprocessed.rawdata, already.processed.rawdata, rawdata.notprocessed, rawdatafiles.list)
 }
-```
