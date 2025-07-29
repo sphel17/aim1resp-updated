@@ -24,9 +24,9 @@ library(lubridate)
 library(tidyr)
 
 # set directory values
-rawdata.folder = "raw-data"
-subprocessed.data.folder = "analysis/subprocessed-data"
-processed.data.folder = "processed-data"
+rawdata.folder = "data/raw-data"
+subprocessed.data.folder = "data/subprocessed-data"
+processed.data.folder = "data/processed-data"
 
 # define custom operator
 `%notin%` <- Negate(`%in%`)
